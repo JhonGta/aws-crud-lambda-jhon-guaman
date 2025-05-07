@@ -1,0 +1,56 @@
+org: jsguaman7
+app: apptask
+service: AppTasks
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:*
+      Resource:
+        - arn:aws:dynamodb:us-east-1:430861662846:table/tareasTable
+
+functions:
+  hello:
+    handler: src/handler.hello
+    events:
+      - httpApi:
+          path: /
+          method: get
+
+  crearTask:
+    handler: src/agregarTask.agregarTask
+    events:
+      - httpApi:
+          path: /tarea
+          method: post
+
+  obtenerTasks:
+    handler: src/obtenerTasks.obtenerTasks
+    events:
+      - httpApi:
+          path: /tarea
+          method: get
+
+  obtenerTask:
+    handler: src/obtenerTask.obtenerTask
+    events:
+      - httpApi:
+          path: /tarea/{id}
+          method: get
+
+resources:
+  Resources:
+    tareasTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: tareasTable
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
