@@ -11,6 +11,18 @@ provider:
         - dynamodb:*
       Resource:
         - arn:aws:dynamodb:us-east-1:430861662846:table/tareasTable
+  httpApi:
+    cors:
+      allowedOrigins:
+        - "*"
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      allowedHeaders:
+        - Content-Type
 
 functions:
   hello:
@@ -47,6 +59,14 @@ functions:
       - httpApi:
           path: /tarea/{id}
           method: put
+
+  eliminarTask:  
+    handler: src/eliminarTask.eliminarTask
+    events:
+      - httpApi:
+          path: /tarea/{id}
+          method: delete
+
 
 
 resources:

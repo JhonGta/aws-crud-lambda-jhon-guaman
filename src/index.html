@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Tareas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #f2f2f2;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .formulario {
+      background: white;
+      padding: 20px;
+      margin-bottom: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+    }
+
+    button.crear {
+      background-color: #28a745;
+    }
+
+    button.actualizar {
+      background-color: #007bff;
+    }
+
+    button.eliminar {
+      background-color: #dc3545;
+    }
+
+    table {
+      width: 100%;
+      background: white;
+      border-collapse: collapse;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f8f9fa;
+    }
+
+    .acciones button {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Gestión de Tareas</h1>
+
+  <div class="formulario">
+    <h2>Agregar / Editar Tarea</h2>
+    <input type="hidden" id="task-id" />
+    <input id="titulo" placeholder="Título" />
+    <textarea id="descripcion" placeholder="Descripción"></textarea>
+    <button class="crear" onclick="crearTarea()">Guardar</button>
+    <button class="actualizar" onclick="actualizarTarea()" style="display:none;">Actualizar</button>
+  </div>
+
+  <h2>Lista de Tareas</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Título</th>
+        <th>Descripción</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tareas-body"></tbody>
+  </table>
+
+  <script>
+    const API = 'https://jis3ud03zi.execute-api.us-east-1.amazonaws.com/tarea';
+
+    async function cargarTareas() {
+      const res = await fetch(API);
+      const data = await res.json();
+      const tbody = document.getElementById('tareas-body');
+      tbody.innerHTML = '';
+
+      (data.data || []).forEach(t => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+          <td>${t.titulo}</td>
+          <td>${t.descripcion}</td>
+          <td class="acciones">
+            <button class="actualizar" onclick="llenarFormulario('${t.id}', '${t.titulo}', \`${t.descripcion.replace(/`/g, '\\`')}\`)">Editar</button>
+            <button class="eliminar" onclick="eliminarTarea('${t.id}')">Eliminar</button>
+          </td>`;
+        tbody.appendChild(fila);
+      });
+    }
+
+    async function crearTarea() {
+      const titulo = document.getElementById('titulo').value;
+      const descripcion = document.getElementById('descripcion').value;
+
+      if (!titulo || !descripcion) return alert("Llena todos los campos");
+
+      await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titulo, descripcion })
+      });
+
+      limpiarFormulario();
+      cargarTareas();
+    }
+
+    async function actualizarTarea() {
+      const id = document.getElementById('task-id').value;
+      const titulo = document.getElementById('titulo').value;
+      const descripcion = document.getElementById('descripcion').value;
+
+      if (!id || !titulo || !descripcion) return alert("Completa todos los campos");
+
+      await fetch(`${API}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titulo, descripcion })
+      });
+
+      limpiarFormulario();
+      cargarTareas();
+    }
+
+    async function eliminarTarea(id) {
+      if (!confirm("¿Seguro que deseas eliminar esta tarea?")) return;
+      await fetch(`${API}/${id}`, { method: 'DELETE' });
+      cargarTareas();
+    }
+
+    function llenarFormulario(id, titulo, descripcion) {
+      document.getElementById('task-id').value = id;
+      document.getElementById('titulo').value = titulo;
+      document.getElementById('descripcion').value = descripcion;
+      document.querySelector('.crear').style.display = 'none';
+      document.querySelector('.actualizar').style.display = 'inline-block';
+    }
+
+    function limpiarFormulario() {
+      document.getElementById('task-id').value = '';
+      document.getElementById('titulo').value = '';
+      document.getElementById('descripcion').value = '';
+      document.querySelector('.crear').style.display = 'inline-block';
+      document.querySelector('.actualizar').style.display = 'none';
+    }
+
+    cargarTareas();
+  </script>
+</body>
+</html>
